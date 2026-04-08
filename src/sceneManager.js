@@ -112,7 +112,7 @@ class SceneManager {
     this.isDragging = false;
     this.dragDist = 0; // Track movement to differentiate drag vs click
     this.prevMouse = { x: 0, y: 0 };
-    this.spherical = { theta: 0, phi: Math.PI / 3, radius: 4.5 };
+    this.spherical = { theta: 0, phi: Math.PI / 3, radius: 6.0 };
     this.targetSpherical = { ...this.spherical };
     this.autoRotateSpeed = 0.0003;
 
@@ -210,137 +210,103 @@ class SceneManager {
     this.camera.lookAt(0, 0, 0);
   }
 
-  /* ====== STAR FIELD ====== */
+  /* ====== MILKY WAY BACKGROUND ====== */
   _createStarField() {
-    const count = 8000;
-    const positions = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    const colors = new Float32Array(count * 3);
+    const loader = new THREE.TextureLoader();
+    const skyTexture = loader.load('https://unpkg.com/three-globe/example/img/night-sky.png');
+    skyTexture.colorSpace = THREE.SRGBColorSpace;
 
-    for (let i = 0; i < count; i++) {
-      const r = 80 + Math.random() * 120;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
-      sizes[i] = 0.3 + Math.random() * 1.5;
-
-      const temp = Math.random();
-      if (temp < 0.05) {
-        colors[i * 3] = 0.6; colors[i * 3 + 1] = 0.7; colors[i * 3 + 2] = 1.0;
-      } else if (temp < 0.1) {
-        colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 0.5;
-      } else {
-        colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 1.0;
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const material = new THREE.PointsMaterial({
-      size: 0.4,
-      sizeAttenuation: true,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending,
+    const geo = new THREE.SphereGeometry(200, 64, 64);
+    const mat = new THREE.MeshBasicMaterial({
+      map: skyTexture,
+      side: THREE.BackSide,
       depthWrite: false,
+      transparent: true,
+      opacity: 0.85
     });
 
-    this.starField = new THREE.Points(geometry, material);
+    this.starField = new THREE.Mesh(geo, mat);
     this.scene.add(this.starField);
   }
 
-  /* ====== EARTH ====== */
+  /* ====== 4K REALISTIC EARTH ====== */
   _createEarth() {
     const earthGeo = new THREE.SphereGeometry(1, 128, 64);
+    
+    // Load high-res NASA mappings
+    const textureLoader = new THREE.TextureLoader();
+    const tDay = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+    const tNight = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg');
+    const tWater = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-water.png');
+    
+    tDay.colorSpace = THREE.SRGBColorSpace;
+    tNight.colorSpace = THREE.SRGBColorSpace;
 
+    // Custom shader combining Day, Night (emissive), and Specular maps
     const earthMat = new THREE.ShaderMaterial({
       uniforms: {
-        uTime: { value: 0 },
+        tDay: { value: tDay },
+        tNight: { value: tNight },
+        tWater: { value: tWater },
         uSunDir: { value: new THREE.Vector3(1, 0.3, 0.5).normalize() },
       },
       vertexShader: `
+        varying vec2 vUv;
         varying vec3 vNormal;
         varying vec3 vPosition;
-        varying vec2 vUv;
         void main() {
+          vUv = uv;
           vNormal = normalize(normalMatrix * normal);
           vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
-          vUv = uv;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
-        uniform float uTime;
+        uniform sampler2D tDay;
+        uniform sampler2D tNight;
+        uniform sampler2D tWater;
         uniform vec3 uSunDir;
+
+        varying vec2 vUv;
         varying vec3 vNormal;
         varying vec3 vPosition;
-        varying vec2 vUv;
 
-        float hash(vec2 p) {
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
-        float noise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          f = f * f * (3.0 - 2.0 * f);
-          float a = hash(i);
-          float b = hash(i + vec2(1.0, 0.0));
-          float c = hash(i + vec2(0.0, 1.0));
-          float d = hash(i + vec2(1.0, 1.0));
-          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-        }
-        float fbm(vec2 p) {
-          float v = 0.0;
-          float a = 0.5;
-          for (int i = 0; i < 5; i++) {
-            v += a * noise(p);
-            p *= 2.0;
-            a *= 0.5;
-          }
-          return v;
-        }
         void main() {
           vec3 normal = normalize(vNormal);
           vec3 viewDir = normalize(-vPosition);
-          float diffuse = max(dot(normal, uSunDir), 0.0);
-          float ambient = 0.06;
-          vec2 uv = vUv;
-          float continent = fbm(uv * vec2(8.0, 4.0) + vec2(0.5, 0.0));
-          float detail = fbm(uv * vec2(32.0, 16.0));
-          float landMask = smoothstep(0.42, 0.52, continent + detail * 0.15);
-          vec3 oceanDeep = vec3(0.02, 0.04, 0.12);
-          vec3 oceanShallow = vec3(0.04, 0.08, 0.18);
-          vec3 oceanColor = mix(oceanDeep, oceanShallow, detail * 0.5);
-          vec3 landGreen = vec3(0.06, 0.12, 0.04);
-          vec3 landBrown = vec3(0.12, 0.08, 0.03);
-          vec3 landDesert = vec3(0.18, 0.15, 0.08);
-          float biome = fbm(uv * vec2(16.0, 8.0) + vec2(2.0, 1.0));
-          vec3 landColor = mix(landGreen, landBrown, smoothstep(0.3, 0.6, biome));
-          landColor = mix(landColor, landDesert, smoothstep(0.6, 0.8, biome) * 0.6);
-          float polar = abs(uv.y - 0.5) * 2.0;
-          float iceMask = smoothstep(0.82, 0.92, polar + detail * 0.1);
-          vec3 iceColor = vec3(0.6, 0.65, 0.7);
-          vec3 surfaceColor = mix(oceanColor, landColor, landMask);
-          surfaceColor = mix(surfaceColor, iceColor, iceMask);
-          float nightFactor = 1.0 - smoothstep(0.0, 0.15, diffuse);
-          float cityNoise = fbm(uv * vec2(64.0, 32.0) + vec2(3.0, 5.0));
-          float cityMask = smoothstep(0.55, 0.7, cityNoise) * landMask * (1.0 - iceMask);
-          vec3 cityLight = vec3(1.0, 0.85, 0.4) * cityMask * nightFactor * 0.6;
-          vec3 lit = surfaceColor * (ambient + diffuse * 0.9);
-          lit += cityLight;
+          
+          // Lighting computation
+          float sunDot = dot(normal, uSunDir);
+          float diffuse = max(sunDot, 0.0);
+          
+          // Texture lookups
+          vec3 dayColor = texture2D(tDay, vUv).rgb;
+          vec3 nightColor = texture2D(tNight, vUv).rgb;
+          float water = texture2D(tWater, vUv).r;
+          
+          // Specular highlight (water only)
+          vec3 halfVector = normalize(uSunDir + viewDir);
+          float specAmount = pow(max(dot(normal, halfVector), 0.0), 30.0);
+          vec3 specularHighlight = vec3(1.0) * specAmount * water * diffuse;
+
+          // Day / Night transition terminator
+          float terminator = smoothstep(-0.15, 0.15, sunDot);
+          
+          // Combine lighting
+          float ambient = 0.05;
+          vec3 daySide = dayColor * (diffuse + ambient) + specularHighlight * 0.8;
+          
+          // Boost night lights to simulate Bloom
+          vec3 nightSide = nightColor * 1.8; 
+          
+          // Mix sides
+          vec3 finalColor = mix(nightSide, daySide, terminator);
+          
+          // Atmospheric Rim Light (fake scattering)
           float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.0);
-          lit += vec3(0.1, 0.2, 0.4) * fresnel * 0.3;
-          float clouds = fbm(uv * vec2(12.0, 6.0) + vec2(uTime * 0.001, 0.0));
-          float cloudMask = smoothstep(0.5, 0.7, clouds) * 0.15 * diffuse;
-          lit += vec3(0.7, 0.75, 0.8) * cloudMask;
-          gl_FragColor = vec4(lit, 1.0);
+          finalColor += vec3(0.0, 0.4, 0.7) * fresnel * 0.3 * diffuse;
+
+          gl_FragColor = vec4(finalColor, 1.0);
         }
       `,
     });
@@ -376,11 +342,11 @@ class SceneManager {
           float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.5);
           float sunFactor = max(dot(normal, uSunDir), 0.0) * 0.5 + 0.5;
           vec3 atmosColor = mix(
-            vec3(0.15, 0.35, 0.8),
-            vec3(0.3, 0.6, 1.0),
+            vec3(0.0, 0.4, 1.0), // Deep cinematic blue
+            vec3(0.4, 0.8, 1.0), // Bright cyan near edge
             fresnel
           );
-          float alpha = fresnel * 0.55 * sunFactor;
+          float alpha = fresnel * 0.65 * sunFactor;
           gl_FragColor = vec4(atmosColor, alpha);
         }
       `,
@@ -445,11 +411,17 @@ class SceneManager {
           float dist = length(gl_PointCoord - vec2(0.5));
           if (dist > 0.5) discard;
           
-          float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
-          float glow = exp(-dist * 5.0) * 0.6;
+          // UHD Sharp Core: Crisp edge around the middle, transparent otherwise
+          float core = 1.0 - smoothstep(0.18, 0.22, dist);
           
-          vec3 finalColor = vColor + vColor * glow;
-          gl_FragColor = vec4(finalColor, alpha * 0.95);
+          // Optical Halo: High intensity but drops off much faster
+          float glow = exp(-dist * 14.0) * 0.8;
+          
+          // Combine intense center with colored glow
+          vec3 finalColor = vColor + (vColor * glow);
+          
+          // Ensure the core is opaque white/bright for absolute sharpness
+          gl_FragColor = vec4(finalColor + vec3(core * 0.5), core + glow);
         }
       `,
       transparent: true,
@@ -862,7 +834,6 @@ class SceneManager {
     if (this.earth) {
       const earthRotRate = (2 * Math.PI) / (24 * 3600 * 1000); // rad per ms (real time)
       this.earth.rotation.y += earthRotRate * realDeltaMs * this.timeSpeed;
-      this.earth.material.uniforms.uTime.value += delta * this.timeSpeed;
     }
 
     // Star field subtle rotation
