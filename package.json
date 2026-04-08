@@ -16,11 +16,15 @@
     "celestrak",
     "space"
   ],
-  "author": "",
+  "author": "Keshav Kumar",
   "license": "ISC",
   "dependencies": {
-    "satellite.js": "^7.0.0",
+    "satellite.js": "^5.0.0",
     "three": "^0.183.2",
     "vite": "^5.4.21"
+  },
+  "devDependencies": {
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0"
   }
 }
