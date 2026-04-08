@@ -1,0 +1,310 @@
+================================================================================
+         🛰️  SATELLITE ORBIT DATA — COMPLETE PROJECT GUIDE
+================================================================================
+Generated: April 08, 2026
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — THE DATASET (THE ONE AND ONLY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NAME        : CelesTrak
+TYPE        : Free, Public, Real-Time API + Downloadable Dataset
+MAINTAINED  : 501(c)(3) Non-Profit Organization
+SOURCE      : 18th Space Control Squadron, United States Space Force
+UPDATE FREQ : Every 2 hours
+USERS       : ~250,000 unique users per day
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — ALL DIRECT LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏠  Main Page (browse all groups):
+    https://celestrak.org/NORAD/elements/
+
+📡  API Base URL:
+    https://celestrak.org/NORAD/elements/gp.php
+
+--- ACTIVE SATELLITES (All ~10,000+) ---
+
+JSON format:
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=JSON
+
+CSV format:
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=CSV
+
+TLE format (classic):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=TLE
+
+XML format:
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=XML
+
+--- SPECIFIC GROUPS ---
+
+Starlink constellation (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=JSON
+
+OneWeb constellation (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=oneweb&FORMAT=JSON
+
+Space Stations incl. ISS (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=JSON
+
+GPS Operational (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=gps-ops&FORMAT=JSON
+
+Geostationary (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=JSON
+
+Weather satellites (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=JSON
+
+Amateur radio satellites (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=JSON
+
+Space debris (JSON):
+    https://celestrak.org/NORAD/elements/gp.php?GROUP=debris&FORMAT=JSON
+
+--- SINGLE SATELLITE LOOKUP ---
+
+By NORAD catalog number (e.g., ISS = 25544):
+    https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON
+
+By name search:
+    https://celestrak.org/NORAD/elements/gp.php?NAME=ISS&FORMAT=JSON
+
+By international designator:
+    https://celestrak.org/NORAD/elements/gp.php?INTDES=1998-067A&FORMAT=JSON
+
+--- SATELLITE CATALOG (SATCAT) ---
+
+All objects ever launched (JSON):
+    https://celestrak.org/satcat/records.php?FORMAT=JSON
+
+Active payloads only (CSV):
+    https://celestrak.org/satcat/records.php?ACTIVE=1&FORMAT=CSV
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — DATA FORMAT EXPLAINED (TLE / OMM)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TLE = Two-Line Element Set. The industry-standard format for satellite orbits.
+Each satellite has 3 lines:
+
+    ISS (ZARYA)
+    1 25544U 98067A   24001.50000000  .00006418  00000-0  11881-3 0  9996
+    2 25544  51.6416  10.6829 0001234 100.0000 260.0000 15.49631234000001
+
+Line 0 → Satellite Name
+Line 1 → Epoch, drag, NORAD ID, classification
+Line 2 → Inclination, RAAN, Eccentricity, Arg of Perigee, Mean Motion
+
+JSON OMM FORMAT (modern, recommended for developers):
+{
+  "OBJECT_NAME": "ISS (ZARYA)",
+  "OBJECT_ID": "1998-067A",
+  "EPOCH": "2024-01-01T12:00:00",
+  "MEAN_MOTION": 15.49631234,       ← revolutions per day
+  "ECCENTRICITY": 0.0001234,
+  "INCLINATION": 51.6416,           ← degrees
+  "RA_OF_ASC_NODE": 10.6829,        ← Right Ascension of Ascending Node (deg)
+  "ARG_OF_PERICENTER": 100.0,       ← degrees
+  "MEAN_ANOMALY": 260.0,            ← degrees
+  "NORAD_CAT_ID": 25544,
+  "BSTAR": 0.00011881,              ← drag term
+  "CCSDS_OMM_VERS": "2.0"
+}
+
+KEY ORBITAL PARAMETERS GLOSSARY:
+  Inclination      → Tilt of orbit vs equator (0° = equatorial, 90° = polar)
+  RAAN             → Angle of orbit plane from vernal equinox
+  Eccentricity     → How elliptical the orbit is (0 = perfect circle)
+  Mean Motion      → Orbits per day (ISS ≈ 15.5 = ~90 min per orbit)
+  BSTAR            → Atmospheric drag coefficient
+  Epoch            → The moment these values were measured/calculated
+  Perigee          → Lowest point of orbit above Earth
+  Apogee           → Highest point of orbit above Earth
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — QUICK START CODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+--- JavaScript / Browser / Node.js ---
+
+// Fetch all active satellites
+fetch("https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=JSON")
+  .then(r => r.json())
+  .then(satellites => {
+    console.log(`${satellites.length} satellites currently in orbit!`);
+    console.log(satellites[0]); // Inspect first satellite
+  });
+
+--- Python ---
+
+import requests
+
+url = "https://celestrak.org/NORAD/elements/gp.php"
+params = {"GROUP": "active", "FORMAT": "JSON"}
+
+response = requests.get(url, params=params)
+satellites = response.json()
+
+print(f"{len(satellites)} satellites in orbit!")
+for sat in satellites[:5]:
+    print(sat["OBJECT_NAME"], sat["INCLINATION"], sat["MEAN_MOTION"])
+
+--- Python with satellite.js equivalent (sgp4 library) ---
+
+pip install sgp4
+
+from sgp4.api import Satrec, jday
+import datetime
+
+# Parse TLE
+line1 = "1 25544U 98067A   24001.50000000  .00006418  00000-0  11881-3 0  9996"
+line2 = "2 25544  51.6416  10.6829 0001234 100.0000 260.0000 15.49631234000001"
+
+satellite = Satrec.twoline2rv(line1, line2)
+
+# Get position NOW
+now = datetime.datetime.utcnow()
+jd, fr = jday(now.year, now.month, now.day, now.hour, now.minute, now.second)
+e, r, v = satellite.sgp4(jd, fr)
+
+print(f"Position (km): X={r[0]:.2f}, Y={r[1]:.2f}, Z={r[2]:.2f}")
+print(f"Velocity (km/s): Vx={v[0]:.4f}, Vy={v[1]:.4f}, Vz={v[2]:.4f}")
+
+--- JavaScript with satellite.js (for browser 3D viz) ---
+
+npm install satellite.js
+
+import * as satellite from 'satellite.js';
+
+const tleLine1 = '1 25544U 98067A   24001.50000000  .00006418  00000-0  11881-3 0  9996';
+const tleLine2 = '2 25544  51.6416  10.6829 0001234 100.0000 260.0000 15.49631234000001';
+
+const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+const now = new Date();
+const positionAndVelocity = satellite.propagate(satrec, now);
+const positionEci = positionAndVelocity.position;
+
+// Convert to geographic coordinates
+const gmst = satellite.gstime(now);
+const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+
+const lat = satellite.degreesLat(positionGd.latitude);
+const lon = satellite.degreesLong(positionGd.longitude);
+const alt = positionGd.height; // km above Earth
+
+console.log(`ISS → Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}, Alt: ${alt.toFixed(2)} km`);
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — RECOMMENDED TECH STACK FOR VISUALIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPTION A — Lightweight (browser, no install):
+  Data    : CelesTrak API (JSON)
+  Physics : satellite.js (npm) — SGP4 propagation
+  3D      : Three.js (npm) — Earth globe + orbit paths
+  Best for: Portfolio projects, demos, hackathons
+
+OPTION B — Professional Grade:
+  Data    : CelesTrak API (JSON)
+  Physics : satellite.js or sgp4 (Python)
+  3D      : CesiumJS (free, open source) — photorealistic Earth
+  Best for: Serious geospatial apps, accurate projections
+
+OPTION C — Python Data Science:
+  Data    : CelesTrak API (JSON or TLE)
+  Physics : sgp4 (pip install sgp4)
+  Viz     : Plotly or Matplotlib + Cartopy
+  Best for: Jupyter notebooks, research, density maps
+
+OPTION D — Full-Stack App:
+  Backend : Python / Node.js → fetch + cache CelesTrak data
+  Physics : sgp4 / satellite.js
+  Frontend: React + Three.js / CesiumJS
+  DB      : Redis (cache TLE data, refresh every 2 hrs)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — PROJECT IDEAS & VISUAL CONCEPTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Main project idea — 🌍 3D ORBIT SIMULATION
+  Hook       : "There are X satellites orbiting Earth right now..."
+  Show       : Rotating Earth + glowing dots for each satellite
+  Interactive: Click any dot → show satellite name, altitude, speed, owner
+  Tech       : Three.js + satellite.js
+  Wow factor : Real-time position updates every 5 seconds
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — IMPORTANT RULES & RATE LIMITS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  DO NOT hit the CelesTrak API more than ONCE EVERY 2 HOURS.
+    Data is only updated every 2 hours anyway — more requests = same data.
+    Excessive requests → your IP gets firewalled automatically.
+
+✅  CORRECT approach:
+    → Fetch data → store in memory / local cache
+    → Reuse cached data for all visualizations
+    → Re-fetch only after 2 hours have passed
+
+✅  Only download the groups you need:
+    → Don't download ALL groups if you only need Starlink
+    → "active" group includes Starlink, so don't download both
+
+✅  Attribution:
+    → Credit CelesTrak in your project: "Orbital data: celestrak.org"
+    → It's a non-profit — be a good citizen of the space data community
+
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — KEY LIBRARIES TO INSTALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JavaScript / Node.js:
+    npm install satellite.js     ← SGP4 orbit propagation (convert TLE → lat/lon/alt)
+    npm install three            ← 3D rendering (Earth + orbits)
+    npm install cesium           ← Photorealistic globe (alternative to Three.js)
+    npm install d3               ← 2D data visualization / density maps
+
+Python:
+    pip install sgp4             ← SGP4 propagation (same algorithm, Python)
+    pip install skyfield         ← Higher-level astronomy library (uses sgp4)
+    pip install requests         ← HTTP calls to CelesTrak API
+    pip install plotly           ← Interactive 3D/2D charts
+    pip install cartopy          ← Geographic map projections
+    pip install pandas           ← Data wrangling for SATCAT CSV
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — FUN FACTS FOR YOUR PROJECT HOOK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  → There are ~10,000+ active satellites orbiting Earth right now
+  → Starlink alone accounts for ~6,000+ of those satellites
+  → The ISS orbits Earth every ~90 minutes at 28,000 km/h
+  → The ISS is ~408 km above Earth's surface
+  → Geostationary satellites sit at exactly 35,786 km altitude
+  → At that altitude, one orbit = exactly 24 hours (stays "fixed" over Earth)
+  → Over 27,000 pieces of trackable debris orbit Earth
+  → The first satellite, Sputnik 1, launched October 4, 1957
+  → SpaceX has launched more satellites than all other countries combined
+  → A collision at orbital speeds (~7-8 km/s) is 10x more energetic than TNT
+  → CelesTrak tracks ~68,500+ objects total (active + debris + defunct)
+  → By mid-2026, catalog numbers will exceed 5 digits for the first time ever
+
+
+================================================================================
+END OF DOCUMENT — Good luck with your project! 🛰️🌍
+================================================================================

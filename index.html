@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrbitView — Real-Time 3D Satellite Tracker</title>
+  <meta name="description" content="Interactive 3D visualization of 10,000+ satellites orbiting Earth in real-time using CelesTrak data. Track ISS, Starlink, GPS and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader-container">
+      <div class="orbit-loader">
+        <div class="orbit-ring ring-1"></div>
+        <div class="orbit-ring ring-2"></div>
+        <div class="orbit-ring ring-3"></div>
+        <div class="orbit-core"></div>
+      </div>
+      <h1 class="loader-title">OrbitView</h1>
+      <p class="loader-subtitle">Initializing satellite tracking...</p>
+      <div class="loader-progress">
+        <div class="loader-bar" id="loader-bar"></div>
+      </div>
+      <p class="loader-status" id="loader-status">Connecting to CelesTrak...</p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" style="display:none;">
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Top Header Bar -->
+    <header id="top-bar">
+      <div class="top-bar-left">
+        <div class="logo-mark">
+          <svg viewBox="0 0 32 32" width="28" height="28">
+            <circle cx="16" cy="16" r="6" fill="none" stroke="url(#logo-grad)" stroke-width="1.5"/>
+            <ellipse cx="16" cy="16" rx="14" ry="6" fill="none" stroke="url(#logo-grad)" stroke-width="1" transform="rotate(-30 16 16)"/>
+            <ellipse cx="16" cy="16" rx="14" ry="6" fill="none" stroke="url(#logo-grad)" stroke-width="1" transform="rotate(30 16 16)"/>
+            <circle cx="16" cy="16" r="2.5" fill="url(#logo-grad)"/>
+            <defs>
+              <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#7b61ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="app-title">OrbitView</h1>
+        <span class="live-badge" id="live-badge">● LIVE</span>
+      </div>
+      <div class="top-bar-center">
+        <div class="stats-row">
+          <div class="stat-chip" id="stat-total">
+            <span class="stat-icon">🛰️</span>
+            <span class="stat-value" id="total-count">—</span>
+            <span class="stat-label">Tracking</span>
+          </div>
+          <div class="stat-chip" id="stat-leo">
+            <span class="stat-icon">🌍</span>
+            <span class="stat-value" id="leo-count">—</span>
+            <span class="stat-label">LEO</span>
+          </div>
+          <div class="stat-chip" id="stat-meo">
+            <span class="stat-icon">📡</span>
+            <span class="stat-value" id="meo-count">—</span>
+            <span class="stat-label">MEO</span>
+          </div>
+          <div class="stat-chip" id="stat-geo">
+            <span class="stat-icon">🔴</span>
+            <span class="stat-value" id="geo-count">—</span>
+            <span class="stat-label">GEO</span>
+          </div>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <span class="sim-time" id="sim-time" style="display:none;"></span>
+        <div class="time-display">
+          <span class="utc-label">UTC</span>
+          <span class="utc-time" id="utc-time">—</span>
+        </div>
+        <div class="speed-indicator" id="speed-indicator" style="display:none;">
+          <span class="speed-icon">⚡</span>
+          <span class="speed-val" id="speed-display">1x</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Left Sidebar: Filter & Groups -->
+    <aside id="left-panel">
+      <div class="panel-section">
+        <h3 class="panel-heading">Satellite Groups</h3>
+        <div class="group-filters" id="group-filters">
+          <button class="group-btn active" data-group="all" id="filter-all">
+            <span class="group-icon">🌐</span>
+            <span class="group-name">All Active</span>
+            <span class="group-count" id="grp-all-count">—</span>
+          </button>
+          <button class="group-btn" data-group="starlink" id="filter-starlink">
+            <span class="group-icon">⭐</span>
+            <span class="group-name">Starlink</span>
+            <span class="group-count" id="grp-starlink-count">—</span>
+          </button>
+          <button class="group-btn" data-group="stations" id="filter-stations">
+            <span class="group-icon">🏠</span>
+            <span class="group-name">Space Stations</span>
+            <span class="group-count" id="grp-stations-count">—</span>
+          </button>
+          <button class="group-btn" data-group="gps-ops" id="filter-gps">
+            <span class="group-icon">📍</span>
+            <span class="group-name">GPS</span>
+            <span class="group-count" id="grp-gps-count">—</span>
+          </button>
+          <button class="group-btn" data-group="geo" id="filter-geo">
+            <span class="group-icon">🔴</span>
+            <span class="group-name">Geostationary</span>
+            <span class="group-count" id="grp-geo-count">—</span>
+          </button>
+          <button class="group-btn" data-group="weather" id="filter-weather">
+            <span class="group-icon">🌦️</span>
+            <span class="group-name">Weather</span>
+            <span class="group-count" id="grp-weather-count">—</span>
+          </button>
+          <button class="group-btn" data-group="amateur" id="filter-amateur">
+            <span class="group-icon">📻</span>
+            <span class="group-name">Amateur Radio</span>
+            <span class="group-count" id="grp-amateur-count">—</span>
+          </button>
+          <button class="group-btn" data-group="oneweb" id="filter-oneweb">
+            <span class="group-icon">🌐</span>
+            <span class="group-name">OneWeb</span>
+            <span class="group-count" id="grp-oneweb-count">—</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="panel-heading">Search</h3>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search satellite name or ID..." autocomplete="off" />
+          <div class="search-results" id="search-results"></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="panel-heading">Visual Settings</h3>
+        <div class="setting-row">
+          <label for="toggle-orbits">Show Orbit Paths</label>
+          <input type="checkbox" id="toggle-orbits" checked />
+        </div>
+        <div class="setting-row">
+          <label for="toggle-labels">Show Labels</label>
+          <input type="checkbox" id="toggle-labels" />
+        </div>
+        <div class="setting-row">
+          <label for="toggle-atmosphere">Atmosphere</label>
+          <input type="checkbox" id="toggle-atmosphere" checked />
+        </div>
+        <div class="setting-row">
+          <label for="speed-slider">Time Speed</label>
+          <input type="range" id="speed-slider" min="1" max="500" value="1" />
+          <span id="speed-label">1x</span>
+        </div>
+        <div class="speed-hint">
+          <small>↑ Drag to warp time — satellites reposition in real-time</small>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Panel: Satellite Info -->
+    <aside id="right-panel" class="hidden">
+      <button class="close-panel-btn" id="close-right-panel">✕</button>
+      <div id="sat-info-content">
+        <div class="sat-header">
+          <h2 class="sat-name" id="sat-name">—</h2>
+          <span class="sat-id" id="sat-norad-id">NORAD: —</span>
+        </div>
+        <div class="sat-detail-grid">
+          <div class="detail-card">
+            <span class="detail-label">Altitude</span>
+            <span class="detail-value" id="sat-altitude">—</span>
+            <span class="detail-unit">km</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Velocity</span>
+            <span class="detail-value" id="sat-velocity">—</span>
+            <span class="detail-unit">km/s</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Latitude</span>
+            <span class="detail-value" id="sat-lat">—</span>
+            <span class="detail-unit">°</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Longitude</span>
+            <span class="detail-value" id="sat-lon">—</span>
+            <span class="detail-unit">°</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Inclination</span>
+            <span class="detail-value" id="sat-inclination">—</span>
+            <span class="detail-unit">°</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Period</span>
+            <span class="detail-value" id="sat-period">—</span>
+            <span class="detail-unit">min</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Eccentricity</span>
+            <span class="detail-value" id="sat-eccentricity">—</span>
+            <span class="detail-unit"></span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Mean Motion</span>
+            <span class="detail-value" id="sat-mean-motion">—</span>
+            <span class="detail-unit">rev/day</span>
+          </div>
+        </div>
+        <div class="sat-meta">
+          <div class="meta-row">
+            <span class="meta-label">Object ID</span>
+            <span class="meta-value" id="sat-object-id">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Epoch</span>
+            <span class="meta-value" id="sat-epoch">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">BSTAR Drag</span>
+            <span class="meta-value" id="sat-bstar">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Orbit Type</span>
+            <span class="meta-value" id="sat-orbit-type">—</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Bottom Info Bar -->
+    <footer id="bottom-bar">
+      <div class="bottom-left">
+        <span class="credit">Orbital data: <a href="https://celestrak.org" target="_blank" rel="noopener">celestrak.org</a></span>
+        <span class="separator">|</span>
+        <span class="data-age" id="data-age">Data age: —</span>
+      </div>
+      <div class="bottom-right">
+        <span class="fps-counter" id="fps-counter">— FPS</span>
+      </div>
+    </footer>
+
+    <!-- Tooltip (follows mouse on hover) -->
+    <div id="hover-tooltip" class="hidden">
+      <span id="tooltip-name">—</span>
+      <span id="tooltip-alt">—</span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
